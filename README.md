@@ -1,4 +1,4 @@
-# CNN+FoF: Deep Learning for Dark Matter Halo Identification
+# CNN+FoF: application of deep learning to the identification of dark matter haloes
 
 [![Paper](https://img.shields.io/badge/arXiv-2602.21246-b31b1b.svg)](https://arxiv.org/abs/2602.21246)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
