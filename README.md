@@ -10,7 +10,17 @@ A hybrid deep learning pipeline for identifying dark matter haloes in cosmologic
 > **Maiti S., Correa C. M., Fiorilli A., Ruiz A. N., Paz D. J., Pérez Fernández A., Sánchez A. G.**  
 > *CNN+FoF: application of deep learning to the identification of dark matter haloes*, MNRAS (2026)
 
+
 ---
+
+## Cosmic Web
+
+The figure below shows a projected slice ($z \in [10, 15]\ \mathrm{Mpc}$) of the $L200\text{-}N128^3$ simulation at $z=0$. The density field is colour-coded by halo particle density, with field particles shown in blue. Circles indicate individual dark matter haloes identified by ROCKSTAR, coloured by $\log_{10}(M_{200b}/M_\odot)$ from cyan (low mass) to white (high mass). The inset zooms in on the most massive halo in the slice with the $r_{200b}$ boundary marked.
+
+![Cosmic Web](haloes.png)
+
+---
+
 
 ## Overview
 
