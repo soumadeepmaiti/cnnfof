@@ -154,16 +154,21 @@ The CNN+FoF pipeline achieves a consistent speed-up of approximately one order o
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{maiti2026cnnfof,
-  title   = {{CNN+FoF}: application of deep learning to the identification of dark matter haloes},
-  author  = {Maiti, Soumadeep and Correa, Carlos M. and Fiorilli, Andrea and
-             Ruiz, Andr\'es N. and Paz, Dante J. and
-             P\'erez Fern\'andez, Alejandro and S\'anchez, Ariel G.},
-  journal = {Monthly Notices of the Royal Astronomical Society},
-  year    = {2026},
-  eprint  = {2602.21246},
-  archivePrefix = {arXiv},
-  primaryClass  = {astro-ph.CO}
+@ARTICLE{2026arXiv260221246M,
+       author = {{Maiti}, Soumadeep and {Correa}, Carlos M. and {Fiorilli}, Andrea and {Ruiz}, Andr{\'e}s N. and {Paz}, Dante J. and {P{\'e}rez Fern{\'a}ndez}, Alejandro and {S{\'a}nchez}, Ariel G.},
+        title = "{CNN+FoF: application of deep learning to the identification of dark matter haloes}",
+      journal = {arXiv e-prints},
+     keywords = {Cosmology and Nongalactic Astrophysics, Astrophysics of Galaxies},
+         year = 2026,
+        month = feb,
+          eid = {arXiv:2602.21246},
+        pages = {arXiv:2602.21246},
+          doi = {10.48550/arXiv.2602.21246},
+archivePrefix = {arXiv},
+       eprint = {2602.21246},
+ primaryClass = {astro-ph.CO},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2026arXiv260221246M},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 ```
 
@@ -172,9 +177,3 @@ If you use this code in your research, please cite:
 ## Acknowledgements
 
 This work was carried out on the HPC system Raven at the [Max Planck Computing and Data Facility (MPCDF)](https://www.mpcdf.mpg.de) in Garching, Germany. Supported by the Excellence Cluster ORIGINS, funded by the Deutsche Forschungsgemeinschaft (DFG) under Germany's Excellence Strategy — EXC-2094 — 390783311.
-
----
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
