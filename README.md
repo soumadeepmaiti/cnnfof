@@ -53,7 +53,7 @@ make
 
 ## Data
 
-Simulations were generated with [GADGET-4](https://gitlab.mpcdf.mpg.de/vspringe/gadget4) assuming a flat ΛCDM cosmology at $z=0$. Ground-truth halo labels were obtained from [ROCKSTAR](https://github.com/yt-project/rockstar-galaxies).
+Simulations were generated with [GADGET-4](https://gitlab.mpcdf.mpg.de/vrs/gadget4) assuming a flat ΛCDM cosmology at $z=0$. Ground-truth halo labels were obtained from [ROCKSTAR](https://bitbucket.org/gfcstanford/rockstar/src/main/).
 
 Four resolution configurations were used:
 
