@@ -1,38 +1,3 @@
-"""
-gadget4_reader.py
-=================
-Standalone GADGET-4 snapshot reader and writer.
-Drop this file into your repo — no other dependencies needed beyond NumPy.
-
-Notebook usage
---------------
-    import gadget4_reader as g4
-
-    snap = g4.read_snapshot("/path/to/snapshot_000", h=0.6774)
-
-    snap["pos"]     # (N, 3)  float32  Mpc      — comoving positions
-    snap["vel"]     # (N, 3)  float32  km/s     — physical peculiar velocities
-    snap["ids"]     # (N,)    int64             — particle IDs
-    snap["header"]  # dict    — BoxSize, redshift, scale factor, …
-
-    # save to binary   → /output/cnnfof/bin/snapshot_000.npz
-    g4.save_snapshot(snap, "/output/cnnfof", fmt="bin")
-
-    # save to ascii    → /output/cnnfof/ascii/snapshot_000.txt
-    g4.save_snapshot(snap, "/output/cnnfof", fmt="ascii")
-
-Input units (GADGET-4 file)
-----------------------------
-    positions   Mpc/h   (comoving)
-    velocities  km/s    stored as  v_pec / sqrt(a)  — corrected automatically
-
-Output units (what you get back)
-----------------------------------
-    positions   Mpc     (comoving)   =  pos_Mpc_h / h
-    velocities  km/s    (physical peculiar)  =  v_stored * sqrt(a)
-    IDs         int64
-"""
-
 from __future__ import annotations
 
 import array   as _carray
@@ -43,64 +8,12 @@ import textwrap
 import numpy as np
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# GADGET-4 header memory map
-# ─────────────────────────────────────────────────────────────────────────────
-#
-#  bytes   type      field
-#  0–7     uint64    npart[0]        type-0 (gas) particles in this file
-#  8–15    uint64    npart[1]        type-1 (DM)  particles in this file
-#  16–23   uint64    npartTotal[0]   type-0 total across all sub-files
-#  24–31   uint64    npartTotal[1]   type-1 total across all sub-files
-#  32–39   float64   mass[0]         type-0 particle mass
-#  40–47   float64   mass[1]         type-1 DM particle mass
-#  48–55   float64   time            scale factor  a = 1 / (1 + z)
-#  56–63   float64   redshift        z
-#  64–71   float64   BoxSize         box side  [Mpc/h]
-#  72–75   int32     num_files
-#  76–79   int32     (padding)
-#  80–87   int64     Ntrees
-#  88–95   int64     Ntreestotal
-#  ─────   ────────  ─────────────────────────────────────────────────
-#  total   96 bytes
-
 _HDR_FMT  = "=QQQQdddddiiqq"
 _HDR_SIZE = struct.calcsize(_HDR_FMT)   # 96
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Public API
-# ─────────────────────────────────────────────────────────────────────────────
 
 def read_snapshot(snapshot_path: str, h: float) -> dict:
-    """Read a GADGET-4 DM snapshot.  Positions are returned in Mpc.
-
-    Parameters
-    ----------
-    snapshot_path : str
-        Path to the snapshot root, e.g. ``"/runs/sim/snapshot_000"``.
-        If the bare path does not exist, ``<path>.0`` is tried automatically
-        for multi-file snapshots.
-    h : float
-        Hubble parameter (dimensionless), e.g. ``0.6774``.
-        Used to convert positions from Mpc/h  →  Mpc.
-
-    Returns
-    -------
-    dict
-        pos    : ndarray  (N, 3)  float32   comoving positions  [Mpc]
-        vel    : ndarray  (N, 3)  float32   physical peculiar velocity  [km/s]
-        ids    : ndarray  (N,)    int64     particle IDs
-        header : dict
-            BoxSize_mpch   box side length  [Mpc/h]
-            BoxSize_mpc    box side length  [Mpc]   = BoxSize_mpch / h
-            Redshift       output redshift  z
-            ScaleFactor    scale factor  a = 1/(1+z)
-            NpartTotal     total DM particle count
-            ParticleMass   DM particle mass  [GADGET internal mass units]
-            NumFiles       number of sub-files
-            h              the h value you passed in
-    """
     if h <= 0:
         raise ValueError(f"h must be positive, got {h}")
 
@@ -132,38 +45,6 @@ def read_snapshot(snapshot_path: str, h: float) -> dict:
 def save_snapshot(snap: dict,
                   output_dir: str,
                   fmt: str = "bin") -> str:
-    """Save a snapshot dict to disk.
-
-    The output directory is created automatically.  A subfolder ``bin/`` or
-    ``ascii/`` is created inside ``output_dir`` depending on ``fmt``, and the
-    file is named after the original snapshot (stored in ``snap["header"]``).
-
-    Parameters
-    ----------
-    snap : dict
-        Dict returned by :func:`read_snapshot`.
-    output_dir : str
-        Base directory where the output will be saved.
-        ``fmt="bin"``   writes to  ``<output_dir>/bin/<name>.npz``
-        ``fmt="ascii"`` writes to  ``<output_dir>/ascii/<name>.txt``
-    fmt : {"bin", "ascii"}
-        ``"bin"``   — NumPy compressed binary (``.npz``).  Fast, compact, exact.
-        ``"ascii"`` — Space-delimited plain text (``.txt``).
-                      Columns:  ``id  x[Mpc]  y[Mpc]  z[Mpc]  vx  vy  vz``
-
-    Returns
-    -------
-    str
-        Full path of the file that was written.
-
-    Examples
-    --------
-    >>> g4.save_snapshot(snap, "/output/cnnfof", fmt="bin")
-    '/output/cnnfof/bin/snapshot_000.npz'
-
-    >>> g4.save_snapshot(snap, "/output/cnnfof", fmt="ascii")
-    '/output/cnnfof/ascii/snapshot_000.txt'
-    """
     fmt = fmt.lower().strip()
     if fmt not in ("bin", "ascii"):
         raise ValueError(f"fmt must be 'bin' or 'ascii', got '{fmt}'")
@@ -222,18 +103,6 @@ def save_snapshot(snap: dict,
 
 
 def load_saved(path: str) -> dict:
-    """Reload a snapshot previously saved in ``fmt='bin'`` (.npz) format.
-
-    Parameters
-    ----------
-    path : str
-        Path with or without the ``.npz`` extension.
-
-    Returns
-    -------
-    dict
-        Same structure as :func:`read_snapshot` output.
-    """
     if not path.endswith(".npz"):
         path = path + ".npz"
     d = np.load(path)
@@ -248,10 +117,6 @@ def load_saved(path: str) -> dict:
     }
     return {"pos": d["pos"], "vel": d["vel"], "ids": d["ids"], "header": header}
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Internal helpers
-# ─────────────────────────────────────────────────────────────────────────────
 
 def _read_header(snapshot_path: str) -> dict:
     path = _resolve(snapshot_path, 0, nfiles=None)
@@ -282,7 +147,7 @@ def _read_file(fpath: str,
                vel: np.ndarray,
                ids: np.ndarray,
                cursor: int) -> int:
-    """Read one snapshot sub-file; fill slices of pos/vel/ids from cursor."""
+    """Read one snapshot sub-file; fill slices of pos/vel/ids."""
     with open(fpath, "rb") as fin:
 
         # header (re-read to get local particle count for this sub-file)
@@ -362,9 +227,6 @@ def _size_guard(block_bytes, n, ndim, itemsize, name, path):
         )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CLI:  python gadget4_reader.py <snapshot_path> <h>  [--save fmt]
-# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import argparse, sys, time

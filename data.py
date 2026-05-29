@@ -1,59 +1,3 @@
-"""
-data_prep.py
-============
-Training data preparation pipeline for the CNN+FoF halo finder.
-
-Reads GADGET-4 snapshots and ROCKSTAR halo catalogues, filters particles
-inside a chosen halo overdensity radius, and writes a labelled dataset
-(Host = 1 inside halo, Host = 0 field particle) in .ascii and/or .bin.
-
-Supported halo definitions
---------------------------
-    'r200b'  — R_200b  (200× mean density)      radius from file directly
-    'rvir'   — R_vir   (Bryan & Norman Δ_vir)   radius computed from M_vir
-    'r200c'  — R_200c  (200× critical density)   radius computed from M_200c
-    'r500c'  — R_500c  (500× critical density)   radius computed from M_500c
-
-Notebook usage
---------------
-    import gadget4_reader as g4   # your standalone reader
-    import data_prep      as dp
-
-    # ── process every run ────────────────────────────────────────────────
-    dp.process_all_runs(
-        n_runs          = 500,
-        snapshot_reader = g4.read_snapshot,   # pass the reader function
-        snapshot_base   = '/ptmp/ccorrea/.../output_run',
-        rockstar_base   = '/ptmp/masou/.../output_run',
-        output_base     = '../data',
-        radius_def      = 'r200b',   # ← swap to 'rvir', 'r200c', 'r500c'
-        h               = 0.67,
-        min_particles   = 25,
-    )
-
-    # ── process a single run and inspect in the notebook ─────────────────
-    snap = g4.read_snapshot('/ptmp/ccorrea/.../output_run0000/snapshot_000', h=0.67)
-    df   = dp.process_run(
-        run_idx       = 0,
-        snap          = snap,
-        rockstar_base = '/ptmp/masou/.../output_run',
-        output_base   = '../data',
-        radius_def    = 'r200b',
-        h             = 0.67,
-    )
-
-Unit conventions (all internal and output)
-------------------------------------------
-    Positions   Mpc     (GADGET Mpc/h ÷ h,  ROCKSTAR Mpc/h ÷ h)
-    Velocities  km/s    (physical peculiar — GADGET sqrt(a) corrected)
-    Radius      Mpc     (ROCKSTAR kpc/h ÷ 1000h,  or computed from mass)
-    Mass        Msun/h  (ROCKSTAR native)
-
-Dependencies
-------------
-    numpy, pandas, gadget4_reader  (in the same directory as this file)
-"""
-
 from __future__ import annotations
 
 import os
@@ -62,21 +6,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Halo definition registry
-# ─────────────────────────────────────────────────────────────────────────────
-
-# For each definition:
-#   file_col   — column name in halos_0.0.ascii that gives the radius in kpc/h
-#                None  means it must be computed from mass
-#   mass_col   — mass column in halos_0.0.ascii  [Msun/h]
-#   overdensity — Δ (200, 500, …)  None = virial (Bryan & Norman)
-#   reference   — 'c' (critical) or 'b' (mean/background)
-#   out_radius  — output DataFrame column name for the halo radius
-#   out_mass    — output DataFrame column name for the halo mass
 
 RADIUS_CONFIG: dict = {
     'r200b': {
@@ -133,27 +62,8 @@ _HALOS_COLS = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Spherical-overdensity radius computation
-# ─────────────────────────────────────────────────────────────────────────────
-
 def _virial_overdensity(omega_m: float, z: float = 0.0) -> float:
-    """Return Δ_vir relative to critical density (Bryan & Norman 1998).
-
-    Valid for a flat ΛCDM universe.
-
-    Parameters
-    ----------
-    omega_m : float
-        Present-day matter density parameter Ω_m.
-    z : float
-        Redshift (default 0).
-
-    Returns
-    -------
-    float
-        Δ_vir(z)
-    """
+    
     omega_lambda = 1.0 - omega_m
     E2 = omega_m * (1 + z) ** 3 + omega_lambda
     omega_mz = omega_m * (1 + z) ** 3 / E2   # Ω_m(z)
@@ -166,37 +76,7 @@ def _compute_so_radius(mass_msun_h: pd.Series,
                        reference: str,
                        omega_m: float,
                        z: float = 0.0) -> pd.Series:
-    """Compute spherical-overdensity radius from mass.
-
-    Parameters
-    ----------
-    mass_msun_h : pd.Series
-        Halo mass in Msun/h.
-    overdensity : float
-        Overdensity Δ.
-    reference : {'c', 'b'}
-        'c' = relative to critical density.
-        'b' = relative to mean (background) density.
-    omega_m : float
-        Present-day Ω_m.
-    z : float
-        Redshift (default 0).
-
-    Returns
-    -------
-    pd.Series
-        Radius in kpc/h (consistent with ROCKSTAR r200b units).
-
-    Notes
-    -----
-    Critical density in units of (Msun/h) / (Mpc/h)³:
-
-        ρ_c = 2.775 × 10^11   (independent of h in these units)
-
-    Mean density:   ρ_m = Ω_m(z) × ρ_c(z)
-
-    where  ρ_c(z) = ρ_c(0) × E(z)²  and  E(z)² = Ω_m(1+z)³ + Ω_Λ.
-    """
+    
     RHO_CRIT_0 = 2.775e11   # (Msun/h) / (Mpc/h)^3 at z=0
 
     omega_lambda = 1.0 - omega_m
@@ -216,36 +96,13 @@ def _compute_so_radius(mass_msun_h: pd.Series,
     return radius_mpch * 1000.0   # Mpc/h → kpc/h
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Data loaders
-# ─────────────────────────────────────────────────────────────────────────────
 
 def load_halo_catalogue(halos_path: str,
                         radius_def: str,
                         h: float,
                         omega_m: float = 0.3186,
                         z: float = 0.0) -> pd.DataFrame:
-    """Read ROCKSTAR halos_0.0.ascii and return halo properties.
-
-    Parameters
-    ----------
-    halos_path : str
-        Full path to halos_0.0.ascii.
-    radius_def : str
-        One of 'r200b', 'rvir', 'r200c', 'r500c'.
-    h : float
-        Hubble parameter.
-    omega_m : float
-        Ω_m (used only when computing radius from mass).
-    z : float
-        Redshift (default 0).
-
-    Returns
-    -------
-    pd.DataFrame
-        Columns: Halo_ID, Hx, Hy, Hz [Mpc], HVx, HVy, HVz [km/s],
-                 <out_radius> [Mpc], <out_mass> [Msun/h]
-    """
+    
     if radius_def not in RADIUS_CONFIG:
         raise ValueError(
             f"Unknown radius_def '{radius_def}'. "
@@ -307,21 +164,6 @@ def load_halo_catalogue(halos_path: str,
 
 
 def load_halo_particle_table(details_path: str, h: float) -> pd.DataFrame:
-    """Read ROCKSTAR Halo_Details.ascii (per-particle halo assignment).
-
-    Parameters
-    ----------
-    details_path : str
-        Full path to Halo_Details.ascii.
-    h : float
-        Hubble parameter.
-
-    Returns
-    -------
-    pd.DataFrame
-        Columns: Particle_ID (int64), Px, Py, Pz [Mpc],
-                 PVx, PVy, PVz [km/s], Halo_ID (int64), HaloType (int)
-    """
     df = pd.read_csv(
         details_path,
         sep     = r'\s+',
@@ -342,34 +184,10 @@ def load_halo_particle_table(details_path: str, h: float) -> pd.DataFrame:
                'PVx', 'PVy', 'PVz', 'Halo_ID', 'HaloType']].copy()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Core pipeline steps
-# ─────────────────────────────────────────────────────────────────────────────
-
 def build_halo_membership(halo_particles: pd.DataFrame,
                           halos: pd.DataFrame,
                           radius_def: str,
                           min_particles: int = 25) -> pd.DataFrame:
-    """Filter to particles within the chosen halo radius.
-
-    Parameters
-    ----------
-    halo_particles : pd.DataFrame
-        From :func:`load_halo_particle_table`.
-    halos : pd.DataFrame
-        From :func:`load_halo_catalogue`.
-    radius_def : str
-        One of 'r200b', 'rvir', 'r200c', 'r500c'.
-    min_particles : int
-        Halos with fewer particles are discarded (default 25).
-
-    Returns
-    -------
-    pd.DataFrame
-        One row per particle within the halo, with added columns:
-        Hx, Hy, Hz, HVx, HVy, HVz, <out_radius>, <out_mass>,
-        d_HP [Mpc], r_HP (= d_HP / radius), Hpart.
-    """
     cfg = RADIUS_CONFIG[radius_def]
     radius_col = cfg['out_radius']
     mass_col   = cfg['out_mass']
@@ -408,26 +226,7 @@ def build_halo_membership(halo_particles: pd.DataFrame,
 def build_training_sample(snap: dict,
                           halo_membership: pd.DataFrame,
                           radius_def: str) -> pd.DataFrame:
-    """Merge full snapshot with halo membership to produce the training set.
-
-    All N particles from the snapshot are present in the output.
-    Halo particles have Host=1 and populated halo columns.
-    Field particles have Host=0 and NaN halo columns.
-
-    Parameters
-    ----------
-    snap : dict
-        Output of :func:`gadget4_reader.read_snapshot`.
-    halo_membership : pd.DataFrame
-        Output of :func:`build_halo_membership`.
-    radius_def : str
-        One of 'r200b', 'rvir', 'r200c', 'r500c'.
-
-    Returns
-    -------
-    pd.DataFrame
-        All particles, sorted by Particle_ID.
-    """
+   
     cfg = RADIUS_CONFIG[radius_def]
 
     # Full snapshot as DataFrame
@@ -480,28 +279,7 @@ def save_dataset(df: pd.DataFrame,
                  run_idx: int,
                  save_ascii: bool = True,
                  save_bin: bool   = True) -> dict:
-    """Save the training DataFrame to disk.
-
-    Creates ``<output_base>/ascii/`` and ``<output_base>/bin/`` automatically.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-    output_base : str
-        Root output directory.
-    run_idx : int
-        Run index (used to name the file, e.g. ``0000.ascii``).
-    save_ascii : bool
-        Write ``<run_idx:04d>.ascii``.
-    save_bin : bool
-        Write ``<run_idx:04d>.bin``  (pandas pickle, readable with
-        ``pd.read_pickle``).
-
-    Returns
-    -------
-    dict
-        Paths of files written: keys 'ascii' and/or 'bin'.
-    """
+   
     tag   = f"{run_idx:04d}"
     paths = {}
 
@@ -522,10 +300,6 @@ def save_dataset(df: pd.DataFrame,
     return paths
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# High-level entry points (call from notebook)
-# ─────────────────────────────────────────────────────────────────────────────
-
 def process_run(run_idx      : int,
                 snap         : dict,
                 rockstar_base: str,
@@ -537,41 +311,7 @@ def process_run(run_idx      : int,
                 save_bin     : bool  = True,
                 omega_m      : float = 0.3186,
                 z            : float = 0.0) -> pd.DataFrame | None:
-    """Process one simulation run end-to-end.
-
-    Parameters
-    ----------
-    run_idx : int
-        Run index (e.g. 0 for run 0000).
-    snap : dict
-        Snapshot already loaded by ``gadget4_reader.read_snapshot()``.
-        Load it in the notebook:
-            ``snap = g4.read_snapshot(path, h=h)``
-    rockstar_base : str
-        Base path for ROCKSTAR outputs.
-        Expected files:
-            ``<rockstar_base><run:04d>/halos_0.0.ascii``
-            ``<rockstar_base><run:04d>/Halo_Details.ascii``
-    output_base : str
-        Root directory for dataset output.
-    radius_def : str
-        Halo radius definition ('r200b', 'rvir', 'r200c', 'r500c').
-    h : float
-        Hubble parameter.
-    min_particles : int
-        Minimum particles per halo (halos below this are discarded).
-    save_ascii, save_bin : bool
-        Which output formats to write.
-    omega_m : float
-        Omega_m (needed when computing radii from masses).
-    z : float
-        Snapshot redshift (needed for rho_crit(z)).
-
-    Returns
-    -------
-    pd.DataFrame or None
-        The combined training DataFrame, or None if a required file is missing.
-    """
+   
     run_str      = f"{run_idx:04d}"
     halos_path   = os.path.join(rockstar_base + run_str, 'halos_0.0.ascii')
     details_path = os.path.join(rockstar_base + run_str, 'Halo_Details.ascii')
@@ -627,40 +367,7 @@ def process_all_runs(n_runs          : int,
                      omega_m         : float = 0.3186,
                      z               : float = 0.0,
                      run_range       : range | None = None) -> None:
-    """Process multiple simulation runs.
-
-    Parameters
-    ----------
-    n_runs : int
-        Total number of runs (0 to n_runs-1) when run_range is None.
-    snapshot_reader : callable
-        The read_snapshot function from gadget4_reader.
-        Pass as:  snapshot_reader=g4.read_snapshot
-    snapshot_base : str
-        Base path for GADGET-4 snapshots.
-        Snapshot for run i is read from <snapshot_base><i:04d>/snapshot_000.
-    rockstar_base : str
-        Base path for ROCKSTAR outputs.
-    output_base : str
-        Root directory for dataset output.
-    run_range : range or None
-        Optional range, e.g. range(10, 50). Overrides n_runs when given.
-    (all other parameters identical to process_run)
-
-    Example
-    -------
-    >>> import gadget4_reader as g4
-    >>> import data_prep as dp
-    >>> dp.process_all_runs(
-    ...     n_runs          = 500,
-    ...     snapshot_reader = g4.read_snapshot,
-    ...     snapshot_base   = '/ptmp/ccorrea/.../output_run',
-    ...     rockstar_base   = '/ptmp/masou/.../output_run',
-    ...     output_base     = '../data',
-    ...     radius_def      = 'r200b',
-    ...     h               = 0.67,
-    ... )
-    """
+   
     indices = run_range if run_range is not None else range(n_runs)
 
     print(f"Starting data prep  |  radius_def={radius_def}  "
