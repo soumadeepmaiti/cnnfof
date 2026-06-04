@@ -15,7 +15,7 @@ A volumetric Convolutional Neural Network to classify individual simulation part
 
 ## Dark Matter Halo
 
-Spatial distribution of particles in one of the $L200-N128^{3}$ test simulations, colour-coded by classification category: true positives (green), false positives (red), false negatives (orange), and true negatives (grey). The main panel displays a projected slice (depth of $2.5\%$ of the box size) illustrating the large-scale cosmic web.
+Spatial distribution of particles in one of the $L200-N128^{3}$ test simulations, colour-coded by classification category: true positives (green), false positives (red), false negatives (orange), and true negatives (grey). The main panel displays a projected slice (depth of $2.5%$ of the box size) illustrating the large-scale cosmic web.
 The inset zooms in on a representative halo identified by $\texttt{ROCKSTAR}$, with the centre marked by a purple cross and the $r_{200\mathrm{b}}$ radius indicated by a dashed blue circle.
 
 ![Cosmic Web](haloes.png)
@@ -23,16 +23,23 @@ The inset zooms in on a representative halo identified by $\texttt{ROCKSTAR}$, w
 ---
 
 
-## Overview
+## Overview of the Repo
 
-Traditional halo finders are CPU-based and iterative, becoming a severe bottleneck in modern GPU-accelerated cosmological pipelines. CNN+FoF addresses this by:
+This repository provides the core scientific ingredients underlying the CNN+FoF pipeline:
 
-- Performing binary particle classification in a **single GPU-native forward pass**
-- Reducing the particle search space by ~63% before the FoF stage
-- Achieving a **~10× speed-up** over ROCKSTAR across all tested resolutions
-- Recovering halo catalogues with **>98% classification accuracy** and **>95% purity**
-- Reproducing the halo mass function to within **5%** of the ROCKSTAR reference
+**Core algorithm & model:**
+- **`Model.py`**: Full architecture used for the work
 
+- **`models/`**: Pre-trained PyTorch `.pth` models for different resolution configurations amnd mass definition tested:
+  - $L200-N64^{3}$
+  - $L200-N128^3$
+  - $L93.75-N128^{3}$
+
+**Friends-of-Friends clustering:**
+- **`voxcel_fof/`**: Optimised C++ implementation of our optimised and parallelised Friends-of-Friends algorithm.
+
+**Data I/O & utilities:**
+- **`gadget4_reader.py`**: Standalone GADGET-4 snapshot reader. Handles unit conversion (Mpc/h → Mpc, comoving → physical velocities) and exports to `.npz` or ASCII.
 
 ---
 
