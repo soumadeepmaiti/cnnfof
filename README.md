@@ -39,7 +39,7 @@ This repository provides the core scientific ingredients underlying the CNN+FoF 
 - **`voxcel_fof/`**: Optimised C++ implementation of our optimised and parallelised Friends-of-Friends algorithm.
 
 **Data I/O & utilities:**
-- **`gadget4_reader.py`**: Standalone GADGET-4 snapshot reader. Handles unit conversion (Mpc/h → Mpc, comoving → physical velocities) and exports to `.npz` or ASCII.
+- **`gadget4_reader.py`**: Standalone GADGET-4 snapshot reader. Handles unit conversion (Mpc/h → Mpc, comoving → physical velocities) and exports to `.bin` or `.ascii`.
 
 ---
 
