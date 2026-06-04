@@ -15,7 +15,7 @@ A hybrid deep learning pipeline for identifying dark matter haloes in cosmologic
 
 ## Dark Matter Haloe
 
-Spatial distribution of particles in one of the $L200$-$N128^3$ test simulations, colour-coded by classification category: true positives (green), false positives (red), false negatives (orange), and true negatives (grey). The main panel displays a projected slice (depth of $2.5\%$ of the box size) illustrating the large-scale cosmic web.
+Spatial distribution of particles in one of the $L200-N128^{3}$ test simulations, colour-coded by classification category: true positives (green), false positives (red), false negatives (orange), and true negatives (grey). The main panel displays a projected slice (depth of $2.5\%$ of the box size) illustrating the large-scale cosmic web.
 The inset zooms in on a representative halo identified by \texttt{ROCKSTAR}, with the centre marked by a purple cross and the $r_{200\mathrm{b}}$ radius indicated by a dashed blue circle.
 
 ![Cosmic Web](haloes.png)
