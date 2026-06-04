@@ -30,7 +30,7 @@ This repository provides the core scientific ingredients underlying the CNN+FoF 
 **Core algorithm & model:**
 - **`Model.py`**: Full architecture used for the work
 
-- **`models/`**: Pre-trained PyTorch `.pth` models for different resolution configurations amnd mass definition tested:
+- **`models/`**: Trained `.pth` models for different resolution configurations amnd mass definition tested:
   - $L200-N64^{3}$
   - $L200-N128^3$
   - $L93.75-N128^{3}$
