@@ -5,7 +5,7 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 
-A hybrid deep learning pipeline for identifying dark matter haloes in cosmological N-body simulations. A volumetric 3D Convolutional Neural Network classifies individual simulation particles as halo or non-halo members, followed by a highly optimised and parallelised Friends-of-Friends (FoF) clustering algorithm that groups the classified particles into distinct halo objects.
+A volumetric Convolutional Neural Network to classify individual simulation particles as either halo or non-halo members, followed by a highly optimised and parallelised Friends-of-Friends clustering algorithm that groups the classified halo members into distinct haloes.
 
 > **Maiti S., Correa C. M., Fiorilli A., Ruiz A. N., Paz D. J., Pérez Fernández A., Sánchez A. G.**  
 > *CNN+FoF: application of deep learning to the identification of dark matter haloes*, MNRAS (2026)
@@ -13,10 +13,10 @@ A hybrid deep learning pipeline for identifying dark matter haloes in cosmologic
 
 ---
 
-## Dark Matter Haloe
+## Dark Matter Halo
 
 Spatial distribution of particles in one of the $L200-N128^{3}$ test simulations, colour-coded by classification category: true positives (green), false positives (red), false negatives (orange), and true negatives (grey). The main panel displays a projected slice (depth of $2.5\%$ of the box size) illustrating the large-scale cosmic web.
-The inset zooms in on a representative halo identified by \texttt{ROCKSTAR}, with the centre marked by a purple cross and the $r_{200\mathrm{b}}$ radius indicated by a dashed blue circle.
+The inset zooms in on a representative halo identified by $\texttt{ROCKSTAR}$, with the centre marked by a purple cross and the $r_{200\mathrm{b}}$ radius indicated by a dashed blue circle.
 
 ![Cosmic Web](haloes.png)
 
